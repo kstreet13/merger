@@ -1,0 +1,24 @@
+Package: merger
+Title: Methods for merging clusters to maximize agreement across multiple clusterings
+Version: 0.00.00
+Description: Methods for merging clusters to maximize agreement across multiple clusterings.
+Authors@R: c(person("Kelly", "Street", email = "street.kelly@gmail.com",
+            role = c("aut", "cre", "cph")))
+License: Artistic-2.0
+Depends:
+    R (>= 3.5),
+    stats
+Imports:
+    clusterExperiment,
+    matrixStats,
+    SingleCellExperiment,
+    SummarizedExperiment
+Suggests:
+    BiocGenerics,
+    knitr,
+    mclust,
+    RColorBrewer,
+    rmarkdown
+VignetteBuilder: knitr
+LazyData: false
+BugReports: https://github.com/kstreet13/merger/issues
