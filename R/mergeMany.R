@@ -2,8 +2,7 @@
 ### ARImp ###
 ################################################################################
 require(clusterExperiment)
-clusMat <- readRDS('~/clusMat.rds')
-#clusMat <- clusterings
+clusMat <- readRDS('data/clusMat.rds')
 clusMat <- apply(clusMat,2,function(x){
     x[x != '-1'] <- as.numeric(factor(x[x != '-1']))
     x[x == '-1'] <- -1
