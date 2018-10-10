@@ -55,7 +55,7 @@ arma::dvec test_pairs(const arma::ivec Q, const arma::Mat<int> clusPairs, arma::
     arma::uvec indii;
     arma::uvec indjj;
     for (int pp=0; pp<clusPairs.n_cols; pp++) {
-        Rcout << clusPairs(0,pp) << arma::endl;
+        //Rcout << clusPairs(0,pp) << arma::endl;
         arma::ivec Qm = Q;
         indii = arma::find(Q == clusPairs(0,pp));
         indjj = arma::find(Q == clusPairs(1,pp));
