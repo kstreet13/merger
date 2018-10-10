@@ -33,7 +33,10 @@ while(working){
     mergeResults <- lapply(1:ncol(clusMat.m),function(wh.clus){
         clus <- clusMat.m[,wh.clus]
         clusters <- unique(clus)
-        clusPairs <- combn(clusters[clusters!=-1], 2)[,1:10] #########
+        clusPairs <- combn(clusters[clusters!=-1], 2) #########
+        
+        # test_pairs(clus, clusPairs, num, denom)
+        
         mcmapply(function(pp){
             ind.ii <- which(clus == clusPairs[1,pp])
             ind.jj <- which(clus == clusPairs[2,pp])

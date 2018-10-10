@@ -40,19 +40,46 @@ arma::Mat<double> update_coclus(arma::uvec indii, arma::uvec indjj, arma::Mat<do
 }
 
 // [[Rcpp::export]]
-double update_arimp(const arma::ivec&  Q, arma::uvec indii, arma::uvec indjj, arma::Mat<double> M, arma::Mat<double> update) {
+double update_arimp(const arma::ivec& Q, arma::uvec indii, arma::uvec indjj, arma::Mat<double> M, arma::Mat<double> update) {
     M(indii - 1,indjj - 1) = update;
     M(indjj - 1,indii - 1) = update.t();
     return ARImp(Q, M);
 }
+
+// [[Rcpp::export]]
+arma::dvec test_pairs(const arma::ivec Q, const arma::Mat<int> clusPairs, arma::Mat<int> num, arma::Mat<double> denom) {
+    
+    arma::dvec arimps(clusPairs.n_cols);
+    int k1p = Q.max() + 1;
+    
+    arma::uvec indii;
+    arma::uvec indjj;
+    for (int pp=0; pp<clusPairs.n_cols; pp++) {
+        Rcout << clusPairs(0,pp) << arma::endl;
+        arma::ivec Qm = Q;
+        indii = arma::find(Q == clusPairs(0,pp));
+        indjj = arma::find(Q == clusPairs(1,pp));
+
+        Qm.replace(clusPairs(0,pp),k1p);
+        Qm.replace(clusPairs(1,pp),k1p);
+
+        num(indii, indjj) += 1;
+        num(indjj, indii) += 1;
+
+        arimps[pp] = ARImp(Qm, num/denom);
+        
+        num(indii, indjj) -= 1;
+        num(indjj, indii) -= 1;
+    }
+    
+    return arimps;
+}
+
 
 // You can include R code blocks in C++ files processed with sourceCpp
 // (useful for testing and development). The R code will be automatically 
 // run after the compilation.
 //
 /*** R
-# arimps <- apply(clusMat,2,ARImp,coClus)
-# arimps[4] == ARImp(clusMat[,4], coClus)
-update_arimp(Q = c(1,1,2,2), indii=c(1,2), indjj=c(3,4), 
-    M=matrix(1:16,4), update=matrix(1:4,2,2))
+test_pairs(clus, clusPairs, num, denom)
 */
