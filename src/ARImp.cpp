@@ -81,5 +81,5 @@ arma::dvec test_pairs(const arma::ivec Q, const arma::Mat<int> clusPairs, arma::
 // run after the compilation.
 //
 /*** R
-test_pairs(clus, clusPairs, num, denom)
+#test_pairs(clus, clusPairs, num, denom)
 */
