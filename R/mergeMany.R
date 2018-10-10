@@ -34,7 +34,7 @@ while(working){
     mergeResults <- mclapply(1:ncol(clusMat.m),function(wh.clus){
         clus <- clusMat.m[,wh.clus]
         clusternames <- clusters[[wh.clus]]
-        clusPairs <- combn(clusternames[clusternames!=-1], 2)[,1:10] #########
+        clusPairs <- combn(clusternames[clusternames!=-1], 2)[,1:20] #########
         test_pairs(clus, clusPairs, num, denom) - arimps[wh.clus]
     }, mc.cores = NCORES)
     
@@ -48,9 +48,10 @@ while(working){
         clusternames <- clusters[[wh.clus]]
         clusPairs <- combn(clusternames[clusternames!=-1], 2)
         pair <- clusPairs[,which.max(mergeResults[[wh.clus]])]
-        ind.ii <- which(clusMat[,wh.clus] == pair[1])
-        ind.jj <- which(clusMat[,wh.clus] == pair[2])
-        clusMat[c(ind.ii,ind.jj), wh.clus] <- min(pair)
+        ind.ii <- which(clusMat.m[,wh.clus] == pair[1])
+        ind.jj <- which(clusMat.m[,wh.clus] == pair[2])
+        clusMat.m[c(ind.ii,ind.jj), wh.clus] <- min(pair)
+        clusters <- apply(clusMat.m,2,unique)
         # update num
         num[ind.ii,ind.jj] <- num[ind.ii,ind.jj] + 1
         num[ind.jj,ind.ii] <- num[ind.jj,ind.ii] + 1
