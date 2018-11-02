@@ -14,116 +14,72 @@ clusMat <- apply(clusMat,2,function(x){
 #rm(coClus)
 clusters <- apply(clusMat,2,unique)
 
-clusMat.m <- clusMat
-
 #base.ARI <- mean(arimps)
 #best.ARI <- base.ARI
 
 require(parallel)
+
+#mergeManyPairwise <- function(clusMat){
+require(matrixStats)
+n <- nrow(clusMat)
+
+clusMat.m <- clusMat
+
+base.ARI <- apply(clusMat,2,function(x){
+    apply(clusMat,2,function(y){
+        mclust::adjustedRandIndex(x,y)
+    })
+})
+best.ARI <- base.ARI
+
 working <- TRUE
 merges <- NULL
-
-
-.ARI <- function(mat,matchoose2=NULL){
-    if(class(mat)=='list'){
-        matchoose2 <- mat[[2]]
-        mat <- mat[[1]]
-    }
-    ei <- sum(choose(rowSums(mat),2))*sum(choose(colSums(mat),2)) / choose(sum(mat),2)
-    (sum(matchoose2) - ei) / (.5*(sum(choose(rowSums(mat),2)) + sum(choose(colSums(mat),2))) - ei)
-}
-
-
-mergeManyPairwise <- function(clusMat){
-    require(matrixStats)
-    n <- nrow(clusMat)
-    
-    confusionMats <- list()
-    for(ci1 in 1:(ncol(clusMat)-1)){
-        for(ci2 in (ci1+1):ncol(clusMat)){
-            mat.ij <- table(clusMat[,ci1],clusMat[,ci2])
-            confusionMats[[paste0(c(ci1,ci2),collapse = '')]] <- list(mat = mat.ij, mat2 = choose(mat.ij,2))
-        }
-    }
-    
-    clusMat.m <- clusMat
-
-    base.ARI <- sapply(1:ncol(clusMat),function(ci1){
-        sapply(1:ncol(clusMat),function(ci2){
-            if(ci1==ci2){ return(1) }
-            return(.ARI(confusionMats[[paste(c(min(c(ci1,ci2)),max(c(ci1,ci2))),collapse='')]]))
-        })
-    })
-    best.ARI <- base.ARI
-    
-    working <- TRUE
-    while(working){
+while(working){
+    # test all pairwise clusters to merge
+    mergeResults <- mclapply(1:ncol(clusMat.m),function(wh.clus){
+        clus <- clusMat.m[,wh.clus]
+        clusternames <- clusters[[wh.clus]]
+        clusPairs <- combn(clusternames[clusternames!=-1], 2)#[,1:20] #########
         
-        # test all pairs of clusters to merge
-        mergeResults <- lapply(1:ncol(clusMat.m),function(wh.clus){
-            aris <- best.ARI[,wh.clus][-wh.clus]
-            clus <- clusMat.m[,wh.clus]
-            clusternames <- clusters[[wh.clus]]
-            clusPairs <- combn(clusternames[clusternames!=-1], 2)
-            
-            apply(clusPairs,2,function(clp){
-                aris.m <- sapply((1:ncol(clusMat.m))[-wh.clus],function(ci2){
-                    idx <- paste0(c(wh.clus,ci2),collapse = '')
-                    matlist <- confusionMats[[idx]]
-                    matlist$mat
-                })
-                
-                # if(jj > ii & all(clusters1[c(ii,jj)] != '-1')){
-                #     newrow <- colSums(mat.m[c(ii,jj),])
-                #     mat.k <- mat.m[-c(ii,jj),]
-                #     mat.k <- rbind(mat.k, newrow)
-                #     mat2.k <- mat2.m[-c(ii,jj),]
-                #     mat2.k <- rbind(mat2.k, choose(newrow,2))
-                #     return(.ARI(mat.k, mat2.k))
-                # }else{
-                #     return(-1)
-                # }
+        deltaARI <- apply(clusPairs,2,function(pair){
+            sapply((1:ncol(clusMat))[-wh.clus], function(j.clus){
+                clus[clus %in% pair] <- max(clus)+1
+                mclust::adjustedRandIndex(clus, clusMat[,j.clus])
             })
-            
-            test_pairs(clus, clusPairs, num, denom) - arimps[wh.clus]
+        }) - best.ARI[wh.clus, -wh.clus]
+        
+        return(colMeans(deltaARI))
+    }, mc.cores = 3)
+    
+    # find best pair to merge, only merge if it improves ARI
+    maxes <- sapply(mergeResults,max)
+    if(max(maxes) > 0){
+        wh.clus <- which.max(maxes)
+        # update clusters
+        clusternames <- clusters[[wh.clus]]
+        clusPairs <- combn(clusternames[clusternames!=-1], 2)
+        pair <- clusPairs[,which.max(mergeResults[[wh.clus]])]
+        ind.ii <- which(clusMat.m[,wh.clus] == pair[1])
+        ind.jj <- which(clusMat.m[,wh.clus] == pair[2])
+        clusMat.m[c(ind.ii,ind.jj), wh.clus] <- min(pair)
+        clusters[[wh.clus]] <- unique(clusMat.m[,wh.clus])
+        # update best.ARI
+        newARIs <- sapply((1:ncol(clusMat.m))[-wh.clus], function(j){
+            mclust::adjustedRandIndex(clusMat.m[,wh.clus], clusMat.m[,j])
         })
-            
-        # find best pair to merge, only merge if it improves ARI
-        merged.aris <- unlist(c(mergeResults1,mergeResults2))
-        if(max(merged.aris) > best.ARI){
-            best.ARI <- max(merged.aris)
-            if(max(mergeResults1) > max(mergeResults2)){
-                ii <- which.max(rowMaxs(mergeResults1))
-                jj <- which.max(colMaxs(mergeResults1))
-                tomerge <- c(clusters1[ii], clusters1[jj])
-                clus1.m[clus1.m %in% tomerge] <- paste0(tomerge,collapse=',')
-                newrow <- colSums(mat.m[c(ii,jj),])
-                mat.m <- mat.m[-c(ii,jj),]
-                mat.m <- rbind(mat.m, newrow)
-                mat2.m <- mat2.m[-c(ii,jj),]
-                mat2.m <- rbind(mat2.m, choose(newrow,2))
-                rownames(mat.m)[nrow(mat.m)] <- paste0(tomerge,collapse=',')
-            }else{
-                ii <- which.max(rowMaxs(mergeResults2))
-                jj <- which.max(colMaxs(mergeResults2))
-                
-                tomerge <- c(clusters2[ii], clusters2[jj])
-                clus2.m[clus2.m %in% tomerge] <- paste0(tomerge,collapse=',')
-                newcol <- rowSums(mat.m[,c(ii,jj)])
-                mat.m <- mat.m[,-c(ii,jj)]
-                mat.m <- cbind(mat.m, newcol)
-                mat2.m <- mat2.m[,-c(ii,jj)]
-                mat2.m <- cbind(mat2.m, choose(newcol,2))
-                colnames(mat.m)[ncol(mat.m)] <- paste0(tomerge,collapse=',')
-            }
-            #print(tomerge)
-        }else{
-            working <- FALSE
-        }
+        best.ARI[wh.clus,-wh.clus] <- newARIs
+        best.ARI[-wh.clus,wh.clus] <- newARIs
+        # tracking
+        merges <- rbind(merges, c(wh.clus, pair))
+        print(c(wh.clus, pair))
+    }else{
+        working <- FALSE
     }
-    return(cbind(clus1.m,clus2.m))
 }
-
-
 colnames(merges) <- c('clustering', 'cluster1','cluster2')
+
+
+save(clusMat.m, merges, file='mergeManyPairwise_out.RData')
+#}
+
 #
