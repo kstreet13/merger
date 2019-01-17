@@ -2,14 +2,17 @@
 ### ARImp ###
 ################################################################################
 require(clusterExperiment)
+library(here)
 NCORES = 2
-clusMat <- readRDS('data/clusMat.rds')
-clusMat <- apply(clusMat,2,function(x){
-    x[x != '-1'] <- as.numeric(factor(x[x != '-1']))
-    x[x == '-1'] <- -1
-    x <- as.integer(x)
+clusMat <- readRDS(here('data', 'clusMat.rds'))
+apply(clusMat, 2, function(l) length(unique(l)))
+clusMat <- apply(clusMat, 2, function(x) {
+  x[x != "-1"] <- as.numeric(factor(x[x != "-1"]))
+  x[x == "-1"] <- -1
+  x <- as.integer(x)
 }) # convert to integer
 coClus <- makeConsensus(clusMat, proportion = 0.8)$percentageShared
+
 denom <- (clusMat!=-1) %*% t(clusMat!=-1)
 num <- coClus * denom
 rm(coClus)
@@ -19,7 +22,7 @@ clusMat.m <- clusMat
 
 # n x n similarity matrix, M / partition Q
 require(Rcpp)
-sourceCpp('./src/ARImp.cpp')
+sourceCpp(here('src', 'ARImp.cpp')
 
 arimps <- apply(clusMat,2,ARImp,num/denom)
 

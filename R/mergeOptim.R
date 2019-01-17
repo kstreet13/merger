@@ -1,5 +1,3 @@
-
-
 clus1 <- clus1.m <- allen
 clus2 <- clus2.m <- rsec
 #clus1 <- clus1.m <- sample(allen)
