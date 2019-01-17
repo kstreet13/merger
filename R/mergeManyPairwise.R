@@ -1,11 +1,11 @@
 ################################################################################
 ### pairwise ARIs ###
 ################################################################################
-library(clusterExperiment)
 library(parallel)
 library(matrixStats)
 library(here)
-library(mclust)
+library(mclust # , lib.loc="/system/linux/lib/R-18.04/3.5/x86_64/site-library"
+        )
 source(here("R", "helper.R"))
 
 clusMat <- readRDS(here("data", "clusMat.rds"))
